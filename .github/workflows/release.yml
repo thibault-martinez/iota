@@ -39,6 +39,7 @@ env:
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
   TMP_BUILD_DIR: "./tmp/release"
+  RELEASE_NOTES_FILE: "release_notes.txt"
 
 jobs:
   release-build:
@@ -84,6 +85,7 @@ jobs:
       - name: Check out ${{ env.iota_ref }}
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
+          fetch-depth: 0
           ref: ${{ env.iota_ref }}
 
       - name: Set os/arch variables (Windows)
@@ -94,13 +96,7 @@ jobs:
 
       - name: Setup caching
         # Fork of 'Swatinem/rust-cache' which allows caching additional paths
-        uses: bmwill/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # v1.4.0
-
-      - name: Install nexttest (Windows)
-        if: ${{ matrix.os_type == 'windows-x86_64' }}
-        uses: taiki-e/install-action@375e0c7f08a66b8c2ba7e7eef31a6f91043a81b0 # v2.44.38
-        with:
-          tool: nextest
+        uses: bmwill/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # v1.4.0nextest
 
       - name: Install postgres (Windows)
         if: ${{ matrix.os_type == 'windows-x86_64' }}
@@ -185,6 +181,32 @@ jobs:
           path: |
             ./tmp/${{ env.artifact_name }}.tgz
 
+      - name: Generate Release Notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          new_commit_hash=$(git rev-parse HEAD)
+          echo "New commit hash: $new_commit_hash"
+
+          previous_tag=$(git tag --sort=-version:refname | grep -E "^v0\.[0-9]+\.[0-9]+" | grep -Fv "${{ env.iota_ref }}" | head -1)
+          echo "Previous tag: $previous_tag"
+          previous_commit_hash=$(git rev-list -n 1 "${previous_tag}")
+          echo "Previous commit hash: $previous_commit_hash"
+
+          pushd "scripts/release_notes"
+          ./run.sh generate $previous_commit_hash $new_commit_hash | tee -a "../../${{ env.RELEASE_NOTES_FILE }}"
+          popd
+          echo "---" >> ${{ env.RELEASE_NOTES_FILE }}
+          echo "#### Full Log: https://github.com/iotaledger/iota/commits/${{ env.iota_ref }}" >> ${{ env.RELEASE_NOTES_FILE }}
+
+          cat ${{ env.RELEASE_NOTES_FILE }}
+
+          if [[ ${{ env.iota_ref }} == devnet* ]]; then
+            echo "pre_release=true" >> $GITHUB_ENV
+          else
+            echo "pre_release=false" >> $GITHUB_ENV
+          fi
+
       - name: Attach artifacts to ${{ env.iota_ref }} release in GH
         if: ${{ github.event_name == 'release' }}
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
@@ -192,6 +214,8 @@ jobs:
           tag_name: ${{ env.iota_ref }}
           files: |
             ./tmp/${{ env.artifact_name }}.tgz
+          body_path: ${{ env.RELEASE_NOTES_FILE }}
+          prerelease: ${{ env.pre_release }}
 
 #  update-homebrew-formula:
 #    name: Run brew bump-formula-pr for iota on testnet releases
