@@ -96,7 +96,7 @@ jobs:
 
       - name: Setup caching
         # Fork of 'Swatinem/rust-cache' which allows caching additional paths
-        uses: bmwill/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # v1.4.0nextest
+        uses: bmwill/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # v1.4.0
 
       - name: Install postgres (Windows)
         if: ${{ matrix.os_type == 'windows-x86_64' }}
