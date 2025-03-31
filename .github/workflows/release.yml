@@ -182,10 +182,16 @@ jobs:
     #         ./tmp/${{ env.artifact_name }}.tgz
   
   generate-release-notes:
-    runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
     steps:
+      - name: Check out ${{ env.iota_ref }}
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          fetch-depth: 0
+          ref: ${{ env.iota_ref }}
       - name: Generate release notes
         run: |
           new_commit_hash=$(git rev-parse HEAD)
