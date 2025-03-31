@@ -120,7 +120,7 @@ def git(*args):
     return subprocess.check_output(["git"] + list(args)).decode().strip()
 
 
-def extract_notes_from_rebase_commit(commit):
+def extract_notes_from_pr(commit):
     # we'll need to go one level deeper to find the PR number
     url = f"https://api.github.com/repos/iotaledger/iota/commits/{commit}/pulls"
     headers = {
@@ -156,16 +156,18 @@ def extract_notes(commit, seen):
 
     result = {}
 
-    notes = ""
+    notes = message
     if pr is None:
         # Extract PR number from rebase commits if it's not a squashed commit
-        pr, notes = extract_notes_from_rebase_commit(commit)
-    else:
-        # Otherwise, find the release notes section from the squashed commit message
-        match = RE_HEADING.search(message)
-        if not match:
-            return pr, result
-        notes = match.group(1)
+        pr, notes = extract_notes_from_pr(commit)
+        
+    # Find the release notes section from the message
+    match = RE_HEADING.search(notes)
+
+    if not match:
+        return pr, ""
+        
+    notes = match.group(1)
 
     if pr in seen:
         # a PR can be in multiple commits if it's from a rebase,
