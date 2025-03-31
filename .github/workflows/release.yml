@@ -197,7 +197,11 @@ jobs:
           new_commit_hash=$(git rev-parse HEAD)
           echo "New commit hash: $new_commit_hash"
 
-          previous_tag=$(git tag --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | grep -Fv "${{ env.iota_ref }}" | head -1)
+          iota_tag="$(echo ${{ github.ref }} | sed s/'refs\/tags\/'//)"
+          echo "iota_tag $iota_tag"
+          trl=$(echo "$iota_tag" | sed -n 's/^[^-]*-//p')
+          echo "trl $trl"
+          previous_tag=$(git tag --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | grep "$trl" | head -n 1)
           echo "Previous tag: $previous_tag"
           previous_commit_hash=$(git rev-list -n 1 "${previous_tag}")
           echo "Previous commit hash: $previous_commit_hash"
