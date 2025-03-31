@@ -322,6 +322,7 @@ def do_generate(from_, to):
 
 
 args = parse_args()
+print(args)
 if args["command"] == "generate":
     do_generate(args["from"], args["to"])
 elif args["command"] == "check":
