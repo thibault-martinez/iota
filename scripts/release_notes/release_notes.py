@@ -293,9 +293,10 @@ def do_generate(from_, to):
     for commit in commits.split("\n"):
         pr, notes = extract_notes(commit, seen_prs)
         seen_prs.add(pr)
-        for impacted, note in notes.items():
-            if note.checked:
-                results[impacted].append((pr, note.note))
+        if len(notes) != 0:
+            for impacted, note in notes.items():
+                if note.checked:
+                    results[impacted].append((pr, note.note))
 
     # Print the impact areas we know about first
     for impacted in NOTE_ORDER:
