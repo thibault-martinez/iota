@@ -3,4 +3,4 @@
 '@iota/iota-sdk': minor
 ---
 
-Update clients to support committee selection protocol changes
+Update clients after RPC updates to base64
