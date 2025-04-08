@@ -204,7 +204,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
+    # if: ${{ github.event_name == 'release' }}
     needs: generate-tag
     steps:
       - name: Check out ${{ needs.generate-tag.outputs.iota_ref }}
