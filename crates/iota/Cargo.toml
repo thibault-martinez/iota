@@ -7,8 +7,6 @@ license = "Apache-2.0"
 publish = false
 description = "Bringing the real world to Web3 with a scalable, decentralized and programmable DLT infrastructure"
 
-# Test
-
 [lints]
 workspace = true
 
