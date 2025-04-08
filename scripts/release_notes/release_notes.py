@@ -165,14 +165,14 @@ def extract_notes(commit, seen):
     match = RE_HEADING.search(notes)
 
     if not match:
-        return pr, ""
+        return pr, []
         
     notes = match.group(1)
 
     if pr in seen:
         # a PR can be in multiple commits if it's from a rebase,
         # so we only want to process it once
-        return pr, result
+        return pr, []
 
     start = 0
     while True:
@@ -195,7 +195,7 @@ def extract_notes(commit, seen):
         )
         start = end
 
-    return pr, result
+    return pr, result.items()
 
 
 def extract_protocol_version(commit):
@@ -236,7 +236,7 @@ def do_check(commit):
 
     _, notes = extract_notes(commit, set())
     issues = []
-    for impacted, note in notes.items():
+    for impacted, note in notes:
         if impacted not in NOTE_ORDER:
             issues.append(f" - Found unfamiliar impact area '{impacted}'.")
 
@@ -293,10 +293,9 @@ def do_generate(from_, to):
     for commit in commits.split("\n"):
         pr, notes = extract_notes(commit, seen_prs)
         seen_prs.add(pr)
-        if len(notes) != 0:
-            for impacted, note in notes.items():
-                if note.checked:
-                    results[impacted].append((pr, note.note))
+        for impacted, note in notes:
+            if note.checked:
+                results[impacted].append((pr, note.note))
 
     # Print the impact areas we know about first
     for impacted in NOTE_ORDER:
