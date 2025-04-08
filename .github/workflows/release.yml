@@ -217,7 +217,7 @@ jobs:
           new_commit_hash=$(git rev-parse HEAD)
           echo "New commit hash: $new_commit_hash"
 
-          iota_tag="$(echo ${{ github.ref }} | sed s/'refs\/tags\/'//)"
+          iota_tag="$(echo ${{ needs.generate-tag.outputs.iota_ref }} | sed s/'refs\/tags\/'//)"
           echo "iota_tag $iota_tag"
           trl=$(echo "$iota_tag" | sed -n 's/^[^-]*\(-.*\)/\1/p')
           echo "trl $trl"
