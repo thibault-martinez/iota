@@ -42,8 +42,9 @@ For each box you select, include information after the relevant heading that des
 
 - [ ] Protocol:
 - [ ] Nodes (Validators and Full nodes):
-- [ ] gRPC:
+- [ ] Indexer:
 - [ ] JSON-RPC:
 - [ ] GraphQL:
 - [ ] CLI:
 - [ ] Rust SDK:
+- [ ] REST API:
