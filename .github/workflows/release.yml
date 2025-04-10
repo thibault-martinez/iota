@@ -194,6 +194,7 @@ jobs:
       #          choco push iota.${{ env.iota_ref }}.nupkg --source https://push.chocolatey.org/
 
       - name: Upload artifacts for ${{ matrix.os_type }} platform
+        if: ${{ github.event_name == 'release' }}
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: ${{ needs.generate-tag.outputs.artifact_name }}
