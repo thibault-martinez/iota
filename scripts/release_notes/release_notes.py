@@ -156,18 +156,16 @@ def extract_notes(commit, seen):
 
     result = {}
 
-    notes = message
+    notes = ""
     if pr is None:
         # Extract PR number from rebase commits if it's not a squashed commit
         pr, notes = extract_notes_from_rebase_commit(commit)
-        
-    # Find the release notes section from the message
-    match = RE_HEADING.search(notes)
-
-    if not match:
-        return pr, []
-        
-    notes = match.group(1)
+    else:
+        # Otherwise, find the release notes section from the squashed commit message
+        match = RE_HEADING.search(message)
+        if not match:
+            return pr, []
+        notes = match.group(1)
 
     if pr in seen:
         # a PR can be in multiple commits if it's from a rebase,
