@@ -43,21 +43,9 @@ env:
 
 jobs:
   generate-tag:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: self-hosted-x64
-            os_type: linux-x86_64
-          - os: self-hosted-arm64
-            os_type: linux-arm64
-          - os: macos-latest
-            os_type: macos-arm64
-          - os: windows-latest
-            os_type: windows-x86_64
+    runs-on: ubuntu-latest
     outputs:
       iota_ref: ${{ steps.ref.outputs.iota_ref }}
-      artifact_name: ${{ steps.ref.outputs.artifact_name }}
     steps:
       - name: Clean up and validate ref to build and create artifact name
         id: ref
@@ -66,21 +54,17 @@ jobs:
           # Manual dispatch on a branch ref
           if [ "${{ github.event_name == 'workflow_dispatch' }}" == "true" ]; then
             echo "iota_ref=${{ inputs.iota_branch }}" >> $GITHUB_OUTPUT
-            echo "artifact_name=iota-$(echo ${{ inputs.iota_branch }} | tr "/" "-")-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
           fi
 
           # Release builds on a tag ref
           if [ "${{ github.event_name == 'release' }}" == "true" ]; then
             export iota_ref=$(echo ${{ github.ref }} | sed s/'refs\/tags\/'// )
-
             echo "iota_ref=${iota_ref}" >> $GITHUB_OUTPUT
-            echo "artifact_name=iota-${iota_ref}-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
           fi
 
           # Scheduled nightly builds are always cut from develop
           if [ "${{ github.event_name == 'schedule' }}" == "true" ]; then
             echo "iota_ref=develop" >> $GITHUB_OUTPUT
-            echo "artifact_name=iota-nightly-$(date -Idate)-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
           fi
 
   release-build:
@@ -102,6 +86,25 @@ jobs:
     needs: generate-tag
 
     steps:
+      - name: Create artifact name
+        id: create-artifact
+        shell: bash
+        run: |
+          # Manual dispatch on a branch ref
+          if [ "${{ github.event_name == 'workflow_dispatch' }}" == "true" ]; then
+            echo "artifact_name=iota-$(echo ${{ inputs.iota_branch }} | tr "/" "-")-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
+          fi
+
+          # Release builds on a tag ref
+          if [ "${{ github.event_name == 'release' }}" == "true" ]; then
+            echo "artifact_name=iota-${iota_ref}-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
+          fi
+
+          # Scheduled nightly builds are always cut from develop
+          if [ "${{ github.event_name == 'schedule' }}" == "true" ]; then
+            echo "artifact_name=iota-nightly-$(date -Idate)-${{ matrix.os_type }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check out ${{ needs.generate-tag.outputs.iota_ref }}
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
@@ -170,7 +173,7 @@ jobs:
             mv ./target/release/${binary}${{ env.extension }} ${{ env.TMP_BUILD_DIR }}/${binary}${{ env.extension }}
           done
 
-          tar -cvzf ./tmp/${{ needs.generate-tag.outputs.artifact_name }}.tgz -C ${{ env.TMP_BUILD_DIR }} .
+          tar -cvzf ./tmp/${{ steps.create-artifact.outputs.artifact_name }}.tgz -C ${{ env.TMP_BUILD_DIR }} .
 
       #      - name: Publish Windows iota binary to Chocolatey
       #        if: ${{ matrix.os == 'windows-latest' && github.event_name == 'release' &&  && contains(env.iota_ref, '-rc') }}
@@ -197,10 +200,10 @@ jobs:
         if: ${{ github.event_name == 'release' }}
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          name: ${{ needs.generate-tag.outputs.artifact_name }}
+          name: ${{ steps.create-artifact.outputs.artifact_name }}
           if-no-files-found: error
           path: |
-            ./tmp/${{ needs.generate-tag.outputs.artifact_name }}.tgz
+            ./tmp/${{ steps.create-artifact.outputs.artifact_name }}.tgz
 
   generate-release-notes:
     env:
@@ -237,12 +240,10 @@ jobs:
 
           cat ${{ env.RELEASE_NOTES_FILE }}
 
-      - name: Attach artifacts to ${{ needs.generate-tag.outputs.iota_ref }} release in GH
+      - name: Add release notes to ${{ needs.generate-tag.outputs.iota_ref }} release in GH
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
           tag_name: ${{ needs.generate-tag.outputs.iota_ref }}
-          files: |
-            ./tmp/${{ needs.generate-tag.outputs.artifact_name }}.tgz
           body_path: ${{ env.RELEASE_NOTES_FILE }}
           prerelease: ${{ env.PRERELEASE }}
 
