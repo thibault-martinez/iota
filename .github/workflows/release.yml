@@ -73,10 +73,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: self-hosted-x64
+          - os: ubuntu-latest
             os_type: linux-x86_64
-          - os: self-hosted-arm64
-            os_type: linux-arm64
           - os: macos-latest
             os_type: macos-arm64
           - os: windows-latest
