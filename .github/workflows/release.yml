@@ -205,7 +205,7 @@ jobs:
   generate-release-notes:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PRERELEASE: ${{ contains(github.ref, '-rc') }}
+      PRERELEASE: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' }}
     needs: generate-tag
